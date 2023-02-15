@@ -1,0 +1,14 @@
+﻿pokemons
+learnset
+moves
+pokemon route spawn rates
+
+maps
+
+items and their prices
+mart/vendor inventorys
+
+maps
+	warps
+	signs
+	objects/people/trainers

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Pokemon": {
+      "commandName": "Project",
+      "workingDirectory": "F:\\visualStudioProjects\\consoleApp\\PokemonClone\\PokemonClone"
+    }
+  }
+}
