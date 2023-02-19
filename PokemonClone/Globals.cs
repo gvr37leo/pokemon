@@ -6,19 +6,20 @@ using static Utils;
 using static System.Net.Mime.MediaTypeNames;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Runtime.Serialization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 public static class Globals {
 
     public static ProgramData pd;
     //https://www.pokencyclopedia.info/en/index.php?id=sprites/gen2/spr_gold
-    public static Texture2D treetex;
-    public static Texture2D groundtex;
-    public static Texture2D tallgrasstex;
+
 
     public static Atlas overworldAtlas;
     public static Atlas pokemonAtlas;
     public static Atlas pokemonAtlasBack;
     public static Atlas englishAtlas;
+    public static Atlas tilesetAtlas;
 
     public static int pixelscale = 4;
     public static Vector2 tilesize;
@@ -28,10 +29,11 @@ public static class Globals {
     public static Sound battlestartsfx;
     public static Sound wallbumpsfx;
     public static List<MenuItem> menuStack = new List<MenuItem>();
-    public static TextureEx currentPlayerTex = new TextureEx() { tex = playerFrontTex };
+    public static Frame currentPlayerTex;
     public static Zone currentZone;
     public static Sequencer battlestartseq;
     public static float battlestartTimestamp;
+    public static bool xFlip;
 
 
 
@@ -91,18 +93,27 @@ public static class Globals {
             },
         };
 
-        overworldAtlas = new Atlas() {
-            atlasSize = new Vector2(10, 100),
+
+        tilesetAtlas = new Atlas() {
+            atlasSize = new Vector2(8, 100),
             imagesize = new Vector2(16, 16),
-            padding = new Vector2(1, 1),
+            padding = new Vector2(0,0),
             offset = new Vector2(0, 0),
-            texture = LoadTexture("./res/overworldatlas.png"),
+            texture = LoadTexture("./res/tileset2.png"),
+        };
+
+        overworldAtlas = new Atlas() {
+            atlasSize = new Vector2(48, 100),
+            imagesize = new Vector2(16, 16),
+            padding = new Vector2(0,0),
+            offset = new Vector2(0, 0),
+            texture = LoadTexture("./res/overworldAtlas2.png"),
         };
 
         pokemonAtlas = new Atlas() {
             atlasSize = new Vector2(10, 26),
             imagesize = new Vector2(56, 56),
-            padding = new Vector2(171, 188),
+            padding = new Vector2(115, 188),
             offset = new Vector2(1, 18),
             texture = LoadTexture("./res/pokemonatlas.png"),
         };
@@ -122,6 +133,9 @@ public static class Globals {
             texture = LoadTexture("./res/englishfont.png"),
         };
 
+        pd.zone1 = LoadTiledMap("./maps/map1.json","./maps/tileset1.tsj");
+        pd.zone2 = LoadTiledMap("./maps/map2.json", "./maps/tileset1.tsj");
+        pd.zones = new List<Zone>() {pd.zone1, pd.zone2 };
     }
 
     public static void ApplyMove(PokemonInstance attacker, PokemonInstance defender, MoveInstance move) {
@@ -270,4 +284,126 @@ public static class Globals {
     public static Move FindMove(string name) {
         return moves.Find(m => m.name == name);
     }
+
+    public static Vector2 index2Vector(int index, int width) {
+        return new Vector2(index % width,index / width);
+    }
+
+    public static Zone LoadTiledMap(string mapfile,string tilesetfile) {
+        //load zone
+        var zone = new Zone();
+        
+
+        var tilesettext = File.ReadAllText(tilesetfile);
+        JObject tileset = JObject.Parse(tilesettext);
+        zone.tiles.Add(new Tile() { name = "nulltile" });
+        foreach (var tile in tileset.Value<JArray>("tiles")) {
+            var tileobj = new Tile();
+            zone.tiles.Add(tileobj);
+            //tileobj.name = tile.Value<string>("class");
+            tileobj.id = tile.Value<int>("id");
+
+            if(tile.Value<JArray>("properties") == null) {
+                continue;
+            }
+            foreach (var prop in tile.Value<JArray>("properties")) {
+                string name = prop.Value<string>("name");
+                prop.Value<string>("type");
+                if(name == "collides") {
+                    tileobj.collides = prop.Value<bool>("value");
+                }
+                if(name == "name") {
+                    tileobj.name = prop.Value<string>("value");
+                }
+            }
+
+        }
+
+
+        var text = File.ReadAllText(mapfile);
+        JObject map = JObject.Parse(text);
+        zone.name = map.Value<string>("name");
+        zone.size.x = map.Value<int>("width");
+        zone.size.y = map.Value<int>("height");
+
+        var mapprops = map.Value<JArray>("properties");
+        foreach (var prop in mapprops) {
+            var propname = prop.Value<string>("name");
+
+            if(propname == "name") {
+                zone.name = prop.Value<string>("value");
+            }
+        }
+        
+        JArray layers = map.Value<JArray>("layers");
+        foreach (var layer in layers) {
+            if(layer.Value<string>("type") == "tilelayer") {
+                zone.tilemap = layer.Value<JArray>("data").Values<int>().ToList();
+            }else if (layer.Value<string>("type") == "objectgroup") {
+
+                foreach (var tiledobj in layer.Value<JArray>("objects")) {
+                    var obj = new Object();
+                    zone.objects.Add(obj);
+                    obj.name = tiledobj.Value<string>("name");
+                    obj.pos.x = tiledobj.Value<float>("x") / 16;
+                    obj.pos.y = tiledobj.Value<float>("y") / 16;
+
+                    //trigger warp sign object
+                    obj.type = tiledobj.Value<string>("class");
+
+                    var properties = tiledobj.Value<JArray>("properties") ?? new JArray();
+
+                    if(obj.type == "Object" || obj.type == "Warp") {
+                        foreach (JObject prop in properties) {
+                            var propname = prop.Value<string>("name");
+
+                            if (propname == "collides") {
+                                obj.collides = prop.Value<bool>("value");
+                            }
+                            if (propname == "dstmap") {
+                                obj.dstmap = prop.Value<string>("value");
+                            }
+                            if (propname == "dstpoint") {
+                                obj.dstpoint = prop.Value<string>("value");
+                            }
+                            if (propname == "dialogue") {
+                                obj.dialogue = prop.Value<string>("value");
+                            }
+                            if (propname == "walks") {
+                                obj.moves = prop.Value<bool>("value");
+                            }
+                        }
+                    }
+
+                    if(obj.type == "Encounter") {
+                        var encounterChane = new EncounterChance();
+                        foreach (JObject prop in properties) {
+                            var propname = prop.Value<string>("name");
+
+                            if (propname == "lvlmin") {
+                                encounterChane.minlvl = prop.Value<int>("value");
+                            }
+                            if (propname == "lvlmax") {
+                                encounterChane.maxlvl = prop.Value<int>("value");
+                            }
+                            if (propname == "weight") {
+                                encounterChane.weight = prop.Value<int>("value");
+                            }
+                            if (propname == "pokemon") {
+                                encounterChane.pokemon = FindPokemon(prop.Value<string>("value"));
+                            }
+                        }
+
+                        zone.encounterChances.Add(encounterChane);
+                    }
+                }
+            }
+        }
+        return zone;
+
+    }
+}
+
+public class MoveAnim {
+
 }

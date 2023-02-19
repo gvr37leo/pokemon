@@ -24,15 +24,22 @@ public class Item {
     public Action effect;
 }
 
-public class Sprite {
+public class Object {
     //image
     public string name;
+    public string type;
+    public Vector2 pos;
+    public bool collides;
+
+    //person/sign
     public bool moves;
     public string dialogue;
     public Action onInteract;
-    public Atlas atlas;
-    public Vector2 gridpos;
-    public Vector2 spritepos;
 
+    //warp
+    public string dstmap;
+    public string dstpoint;
+    
+    public Vector2 spritepos;
 
 }

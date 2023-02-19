@@ -5,10 +5,10 @@ using static Utils;
 using Raylib_cs;
 using static moveType;
 using static Globals;
-using static animdata;
 using System.Text;
 using System;
-
+using Newtonsoft.Json;
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
 
 
 // https://www.raylib.com/examples.html
@@ -16,10 +16,12 @@ using System;
 // https://www.spriters-resource.com/game_boy_gbc/pokemongoldsilver/
 
 //todo
+//movement animation
+//fix pokemon render bug
+
 //npc's
 //trainers
 //implement some battle moves in a generic way
-//map editor
 //turn without moving
 //move data to seperate data files and util functions to util class
 //save game,load game
@@ -31,10 +33,11 @@ InitWindow((int)screensize.x, (int)screensize.y, "PokeMon");
 InitAudioDevice();
 
 
-currentPlayerTex = new TextureEx() { tex = playerFrontTex };
-Globals.Init();
+currentPlayerTex = new Frame();
 pd = new ProgramData();
-currentZone = pd.testzone;
+Init();
+pd.player.pos = pd.zone1.objects.Find(s => s.name == "spawn").pos;
+currentZone = pd.zone1;
 
 //var shader = LoadShader("./shaders/testvertexshader.vs", "./shaders/testfragmentshader.fs");
 var shader = LoadShader(null, "./shaders/testfragmentshader.fs");
@@ -160,7 +163,7 @@ pd.battlescreen.draw = () => {
     DrawHealthBar(enemyposx, enemyposy + 80, pd.battleOpponent);
 
     var oppPos = new Vector2(-200,50).lerp(new Vector2(400, 50), battlestartseq.Seek(time, "pokemonAppear"));
-    pokemonAtlas.Draw(opponentPok.id, oppPos);
+    pokemonAtlas.Draw(opponentPok.id - 1, oppPos);
     
     
     
@@ -173,7 +176,8 @@ pd.battlescreen.draw = () => {
     DrawHealthBar(selfposx, selfposy + 80, pd.currentPokemon);
     DrawRectangle(selfposx, selfposy + 88, (int)map(pd.currentPokemon.xp, 0, pd.currentPokemon.maxxp, 0, 200), pixelscale, BLUE);
 
-    pokemonAtlasBack.Draw(ownpokemon.id, new Vector2(800, 200).lerp(new Vector2(50, 200), battlestartseq.Seek(time, "pokemonAppear")));
+
+    pokemonAtlasBack.Draw(ownpokemon.id - 1, new Vector2(800, 200).lerp(new Vector2(50, 200), battlestartseq.Seek(time, "pokemonAppear")));
 
 };
 
@@ -186,7 +190,7 @@ pd.battlescreen.unload = () => {
 
 
 pd.overworld.setup = () => {
-
+    pd.player.currentAnim = Animdata.idleAnim[2];
     eventManager.listen("keypressed", (keyo) => {
         KeyboardKey key = (KeyboardKey)keyo;
 
@@ -201,91 +205,126 @@ pd.overworld.setup = () => {
 
 
 //every gameupdate
+var walkCooldown = new Cooldown() { 
+    cooldownTime = 0.5f,
+    remaining = 0,
+    onFinish = () => {
 
-pd.overworld.update = () => {
-    float dt = GetFrameTime();
-    Vector2 userinp = getInput();
-
-    eventManager.process();
-
-
-    if (pd.player.isMoving == false && menuStack.Count == 0 && pd.messageQueue.Count == 0){
-        //movement code
-        pd.player.spritePos = pd.player.pos;
-        if (userinp.length() > 0) {
-            pd.player.dir = userinp;
-            pd.player.oldPos = pd.player.pos;
-            pd.player.pos += userinp;
-            //calculate the progression that should happen over 1 frame start moveprogression at that point
-            pd.player.moveStartTimeStamp = GetTimeF();
-            //this causes stutter because player doesnt immediatly start walking
-            //but stands still 1 frame at the start of animation
-
-        }
+        var currentTile = currentZone.getTile(pd.player.pos);
+        var currentobj = currentZone.objects.Find(o => o.pos == pd.player.pos);
+        //Console.WriteLine("stopped moving");
         int dirint = ConvertVec2Dir(pd.player.dir);
-        currentPlayerTex = idleTexts[dirint];
-    }
-
-    if (pd.player.isMoving) {
-        //animation code
-        pd.player.spritePos = pd.player.oldPos.lerp(pd.player.pos, pd.player.moveProgression);
-        var curMoveAnim = moveDirAnims[ConvertVec2Dir(pd.player.dir)];
-        int animindex = (int)lerp(0, curMoveAnim.textures.Count - 0.0001f, pd.player.moveProgression);
-        currentPlayerTex = curMoveAnim.textures[animindex];
-    }
-    pd.player.update();
-    overworldCamera.offset = (screensize / 2).convert();
-    overworldCamera.target = (pd.player.spritePos * tilesize + tilesize / 2).convert();
-    overworldCamera.zoom = 1;
-    overworldCamera.rotation = 0;
-
-
-    //bump into wall reset
-    var currentTile = currentZone.getTile(pd.player.pos);
-    if (pd.player.startedMoving) {
-        
-        if (currentTile.isBlocking || currentZone.sprites.Any(s => s.gridpos == pd.player.pos)) {
-            pd.player.pos = pd.player.oldPos;
-            PlaySound(wallbumpsfx);
-        }
-    }
-
-    //stoppedmoving event
-    if(pd.player.stoppedMoving) {
+        //set animation to idle and correct direction
         if (currentTile.name == "tallgrass") {
             if (GetRandomValue(0, 100) > 50) {
                 var encounter = pickEncounter(currentZone);
                 pd.battleOpponent = GeneratePokemonInstance(encounter.pokemon, GetRandomValue(encounter.minlvl, encounter.maxlvl));
                 changeScreen(pd.battlescreen);
             }
-        }else if(currentTile.name == "portal") {
-            //unload oldzone, load new zone
-            currentZone = pd.zones[currentTile.dstZone];
+        } else if (currentobj?.type == "Warp") {
+            var dstmap = pd.zones.Find(z => z.name == currentobj.dstmap);
+            currentZone = dstmap;
+            pd.player.pos = dstmap.objects.Find(o => o.name == currentobj.dstpoint).pos;
+        }
+        Animdata.moveUpAnim.frames[0].xFlip = !Animdata.moveUpAnim.frames[0].xFlip;
+        Animdata.moveDownAnim.frames[0].xFlip = !Animdata.moveDownAnim.frames[0].xFlip;
+    },
+};
+
+void onStartWalking() {
+
+    var currentTile = currentZone.getTile(pd.player.pos);
+    if (currentTile.collides || currentZone.objects.Any(s => s.pos == pd.player.pos && s.collides)) {
+        pd.player.pos = pd.player.oldPos;
+        PlaySound(wallbumpsfx);
+    }
+}
+
+pd.overworld.update = () => {
+    float dt = GetFrameTime();
+    Vector2 userinp = getInput();
+
+    eventManager.process();
+    //remove the ismoving stuff
+    //replace it with a cooldown class
+    
+    //update tile to follow the players pos, calculate pos using cooldown percentage
+
+    if (walkCooldown.IsReady() && menuStack.Count == 0 && pd.messageQueue.Count == 0){
+        //movement code
+        pd.player.spritePos = pd.player.pos;
+        if (userinp.length() > 0) {
+            pd.player.dir = userinp;
+            pd.player.oldPos = pd.player.pos;
+            pd.player.pos += userinp;
+            walkCooldown.Start();
+            onStartWalking();
+            //start moving event
+            //check
+            int dirint = ConvertVec2Dir(pd.player.dir);
+            pd.player.currentAnim = Animdata.moveDirAnims[dirint];
+        } else {
+            int dirint = ConvertVec2Dir(pd.player.dir);
+            pd.player.currentAnim = Animdata.idleAnim[dirint];
         }
 
-        //animation flipping
-        moveFrontAnim.textures[0].xFlip = !moveFrontAnim.textures[0].xFlip;
-        moveBackAnim.textures[0].xFlip = !moveBackAnim.textures[0].xFlip;
+        //check for stopping movement
+        //user input not down, while it's possible to move
     }
+
+
+
+
+
+    walkCooldown.Update(dt);
+
+    if (walkCooldown.IsReady() == false) {
+        //animation code
+        pd.player.spritePos = pd.player.oldPos.lerp(pd.player.pos, walkCooldown.PercentageComplete());
+    }
+
+
+    overworldCamera.offset = screensize / 2;
+    overworldCamera.target = pd.player.spritePos * tilesize + tilesize / 2;
+    overworldCamera.zoom = 1;
+    overworldCamera.rotation = 0;
 };
 
 pd.overworld.draw = () => {
 
     BeginMode2D(overworldCamera);
-    Vector2 zonesize = currentZone.getSize();
-    for (int x = 0; x < zonesize.x; x++) {
-        for (int y = 0; y < zonesize.y; y++) {
-            DrawTextureEx(currentZone.tilemap[x, y].texture, new Vector2(x, y).mul(tilesize), 0, pixelscale, WHITE);
+    
+    //map
+    for(int i = 0; i < currentZone.tilemap.Count; i++) {
+        
+        var tileid = currentZone.tilemap[i];
+        if (tileid == 0) {
+            continue;
+            //currentZone.defaultTile;
         }
+        var gridpos = index2Vector(i, (int)currentZone.size.x);
+        var abspos = gridpos * tilesize;
+        tilesetAtlas.Draw(tileid - 1, abspos);
     }
 
-    foreach (var sprite in currentZone.sprites) {
-        var abspos = sprite.gridpos * tilesize;
-        sprite.atlas.Draw(0,abspos);
+    //sprites, npcs,warps,triggers,signs
+    foreach (var sprite in currentZone.objects) {
+        var abspos = sprite.pos * tilesize;
+        DrawBorder(abspos, tilesize, BLACK);
+        
+        //overworldAtlas.Draw()
+        //sprite.gridpos
+        //sprite.atlas.Draw(0,abspos);
         //DrawTextureEx(sprite.image, abspos,0,pixelscale, WHITE);
     }
-    
-    DrawTexturePro(currentPlayerTex.tex, new Rectangle(0, 0, currentPlayerTex.xFlip ? -16 : 16, currentPlayerTex.yFlip ? -16 : 16), new Rectangle(pd.player.spritePos.x * tilesize.x, pd.player.spritePos.y * tilesize.y, tilesize.x, tilesize.y), zero.convert(), 0, WHITE);
+
+    //player
+
+    var currentFrame = pd.player.currentAnim.frames[(int)lerp(0, pd.player.currentAnim.frames.Count - 0.0001f, walkCooldown.PercentageComplete())];
+    xFlip = currentFrame.xFlip;
+    overworldAtlas.Draw(currentFrame.index, pd.player.spritePos.mul(tilesize));
+    xFlip = false;
+    //DrawTexturePro(currentPlayerTex., new Rectangle(0, 0, currentPlayerTex.xFlip ? -16 : 16, currentPlayerTex.yFlip ? -16 : 16), new Rectangle(pd.player.spritePos.x * tilesize.x, pd.player.spritePos.y * tilesize.y, tilesize.x, tilesize.y), zero.convert(), 0, WHITE);
     EndMode2D();
 };
 

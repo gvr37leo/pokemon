@@ -21,7 +21,7 @@ public class ProgramData {
     public MenuItem movemenu;
     public MenuItem pkmnmenu;
     public MenuItem mainmenu;
-    public Zone testzone;
+    public Zone zone1;
     public Zone zone2;
     public List<Zone> zones;
 
@@ -31,11 +31,38 @@ public class ProgramData {
         wallbumpsfx = LoadSound("./res/wallbump.mp3");
         battlestartsfx = LoadSound("./res/battlestart.mp3");
 
-        groundtex = LoadTexture("./res/ground.png");
-        treetex = LoadTexture("./res/tree.png");
-        tallgrasstex = LoadTexture("./res/tallgrass.png");
 
         pokemons = new List<Pokemon>() {
+            new Pokemon(){
+                name = "bulbasaur",
+                evolve = "ivysaur",
+                types = new List<moveType>(){grass },
+                moveLearnSet = new List<MoveLearn>() {
+                    new MoveLearn(){lvl = 1, move = "scratch" },
+                    new MoveLearn(){lvl = 1, move = "growl" },
+                    new MoveLearn(){lvl = 5, move = "vine whip" },
+                }
+            },
+            new Pokemon(){
+                name = "ivysaur",
+                evolve = "venosaur",
+                types = new List<moveType>(){grass },
+                moveLearnSet = new List<MoveLearn>() {
+                    new MoveLearn(){lvl = 1, move = "scratch" },
+                    new MoveLearn(){lvl = 1, move = "growl" },
+                    new MoveLearn(){lvl = 5, move = "vine whip" },
+                }
+            },
+            new Pokemon(){
+                name = "venosaur",
+                evolve = "",
+                types = new List<moveType>(){grass },
+                moveLearnSet = new List<MoveLearn>() {
+                    new MoveLearn(){lvl = 1, move = "scratch" },
+                    new MoveLearn(){lvl = 1, move = "growl" },
+                    new MoveLearn(){lvl = 5, move = "vine whip" },
+                }
+            },
             new Pokemon(){
                 name = "charmander",
                 evolve = "charmeleon",
@@ -100,39 +127,45 @@ public class ProgramData {
                     new MoveLearn(){lvl = 5, move = "ember" },
                 }
             },
+
+
             new Pokemon(){
-                name = "bulbasaur",
-                evolve = "ivysaur",
-                types = new List<moveType>(){water },
-                moveLearnSet = new List<MoveLearn>() {
-                    new MoveLearn(){lvl = 1, move = "scratch" },
-                    new MoveLearn(){lvl = 1, move = "growl" },
-                    new MoveLearn(){lvl = 5, move = "vine whip" },
-                }
-            },
-            new Pokemon(){
-                name = "ivysaur",
-                evolve = "venosaur",
-                types = new List<moveType>(){water },
-                moveLearnSet = new List<MoveLearn>() {
-                    new MoveLearn(){lvl = 1, move = "scratch" },
-                    new MoveLearn(){lvl = 1, move = "growl" },
-                    new MoveLearn(){lvl = 5, move = "vine whip" },
-                }
-            },
-            new Pokemon(){
-                name = "venosaur",
+                name = "pidgey",
+                id = 16,
                 evolve = "",
-                types = new List<moveType>(){water },
+                types = new List<moveType>(){flying },
                 moveLearnSet = new List<MoveLearn>() {
                     new MoveLearn(){lvl = 1, move = "scratch" },
                     new MoveLearn(){lvl = 1, move = "growl" },
-                    new MoveLearn(){lvl = 5, move = "vine whip" },
+                }
+            },
+
+            new Pokemon(){
+                id = 19,
+                name = "rattata",
+                evolve = "",
+                types = new List<moveType>(){normal },
+                moveLearnSet = new List<MoveLearn>() {
+                    new MoveLearn(){lvl = 1, move = "scratch" },
+                    new MoveLearn(){lvl = 1, move = "growl" },
+                }
+            },
+
+            new Pokemon(){
+                id = 25,
+                name = "pikachu",
+                evolve = "",
+                types = new List<moveType>(){electric },
+                moveLearnSet = new List<MoveLearn>() {
+                    new MoveLearn(){lvl = 1, move = "scratch" },
+                    new MoveLearn(){lvl = 1, move = "growl" },
                 }
             },
         };
         for (int i = 0; i < pokemons.Count; i++) {
-            pokemons[i].id = i;
+            if (pokemons[i].id == 0) {
+                pokemons[i].id = i + 1;
+            }
         }
 
 
@@ -186,7 +219,7 @@ public class ProgramData {
                         }
                     }
                 },
-                GeneratePokemonInstance(pokemons.Find(p => p.name == "bulbasaur"), 5)
+                //GeneratePokemonInstance(pokemons.Find(p => p.name == "bulbasaur"), 5)
             }
         };
 
@@ -250,7 +283,6 @@ public class ProgramData {
 
         mainmenu = new MenuItem().setSize(1, 4);
         mainmenu.touch("player");
-        var bagmenu = mainmenu.touch("bag");
         mainmenu.touch("party");
         mainmenu.touch("map").onClick((item) => {
             messageQueue.Add("test text is good   supacalifragilisticexpilalidocious");
@@ -261,74 +293,11 @@ public class ProgramData {
         mainmenu.touch("load").onClick((item) => {
             LoadGame();
         });
-
-
+        var bagmenu = mainmenu.touch("bag");
         bagmenu.touch("pokeball");
         bagmenu.touch("repel");
 
 
-
-        testzone = new Zone() {
-            name = "testzone",
-            encounterChances = new List<EncounterChance> {
-                new EncounterChance() {
-                    pokemon = pokemons.Find(p => p.name == "squirtle"),
-                    minlvl = 3,
-                    maxlvl = 5,
-                    weight = 1,
-                }
-            },
-            tilemap = convertString2Zone(@"
-                xxxxxxxxxxx
-                x         x
-                x  x      x
-                xgggg     x
-                x         x
-                x         x
-                x         x
-                x        1x
-                xxxxxxxxxxx"
-            ),
-            sprites = new List<Sprite>() {
-                new Sprite() {
-                    name = "woman",
-                    dialogue = "Hello, how are you doing?",
-                    gridpos = new Vector2(5,5),
-                    atlas = womanAtlas,
-                    moves = true,
-                    onInteract= () => {
-
-                    },
-                }
-            }
-        };
-
-        zone2 = new Zone() {
-            name = "zone2",
-            encounterChances = new List<EncounterChance> {
-                new EncounterChance() {
-                    pokemon = pokemons.Find(p => p.name == "charmander"),
-                    minlvl = 6,
-                    maxlvl = 8,
-                    weight = 1,
-                }
-            },
-            tilemap = convertString2Zone(@"
-                xxxxxxxxxxx
-                x0    ggx x
-                x  x  ggg x
-                x     ggx x
-                x  x      x
-                x  gggggx x
-                x  x      x
-                x         x
-                xxxxxxxxxxx"
-            ),
-        };
-        zones = new List<Zone>() {
-            testzone,
-            zone2,
-        };
 
 
 
@@ -361,45 +330,6 @@ public class ProgramData {
             pkmnmenu.touch($"pkmn {i + 1}").text = player.pokemonParty[i].nickname;
             pkmnmenu.touch($"pkmn {i + 1}").disabled = false;
         }
-    }
-
-    public Tile[,] convertString2Zone(string map) {
-        map = map.Trim();
-        var lines = map.Split("\r\n");
-        var result = new Tile[lines[0].Length, lines.Length];
-
-        for (int y = 0; y < lines.Length; y++) {
-            var line = lines[y].Trim();
-            for (int x = 0; x < line.Length; x++) {
-                var ch = line[x];
-                if (ch == ' ') {
-                    result[x, y] = new Tile() {
-                        name = "ground",
-                        texture = groundtex,
-                    };
-                } else if (ch == 'x') {
-                    result[x, y] = new Tile() {
-                        name = "tree",
-                        texture = treetex,
-                        isBlocking = true,
-                    };
-                } else if (ch == 'g') {
-                    result[x, y] = new Tile() {
-                        name = "tallgrass",
-                        texture = tallgrasstex,
-                    };
-                } else if (int.TryParse(ch.ToString(), out int res)) {
-                    result[x, y] = new Tile() {
-                        name = "portal",
-                        texture = tallgrasstex,
-                        isPortal = true,
-                        dstZone = res,
-                    };
-                };
-            }
-        }
-
-        return result;
     }
 
     public static Rect GenerateRect(Vector2 anchormin, Vector2 anchormax, Vector2 offsetmin, Vector2 offsetmax) {

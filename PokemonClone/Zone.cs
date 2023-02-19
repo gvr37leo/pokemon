@@ -1,15 +1,28 @@
-﻿public class Zone {
-    public string name;
-    public Tile[,] tilemap;
-    public List<EncounterChance> encounterChances;
-    public List<Sprite> sprites = new List<Sprite>();
+﻿using Raylib_cs;
 
-    public Vector2 getSize() {
-        return new Vector2(tilemap.GetLength(0), tilemap.GetLength(1));
-    }
+public class Zone {
+    public string name;
+    public List<int> tilemap;
+    public int defaultTile = 0;
+    public Vector2 size;
+    public List<EncounterChance> encounterChances = new List<EncounterChance>();
+    public List<Object> objects = new List<Object>();
+    public List<Tile> tiles = new List<Tile>();
+
+
 
     public Tile getTile(Vector2 pos) {
-        return tilemap[(int)pos.x,(int)pos.y];
+        return tiles[tilemap[(int)(pos.y * size.x + pos.x)]];
+    }
+}
+
+public class Tile {
+    public int id;
+    public string name;
+    public bool collides;
+
+    public override string ToString() {
+        return name;
     }
 }
 

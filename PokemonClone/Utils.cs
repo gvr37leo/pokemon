@@ -17,6 +17,20 @@ public static class Utils {
         return (x % m + m) % m;
     }
 
+    public static float Clamp(float value,float min, float max) {
+        if(value < min) {
+            return min;
+        }else if(value > max) {
+            return max;
+        } else {
+            return value;
+        }
+    }
+
+    public static float Clamp01(float value) {
+        return Clamp(value, 0.0f, 1.0f);
+    }
+
     public static void DrawRect(Vector2 pos, Vector2 size, Color color) {
         DrawRectangle((int)pos.x, (int)pos.y, (int)size.x, (int)size.y, color);
     }

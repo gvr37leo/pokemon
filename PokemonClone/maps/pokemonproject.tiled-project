@@ -1,0 +1,181 @@
+{
+    "automappingRulesFile": "",
+    "commands": [
+    ],
+    "extensionsPath": "extensions",
+    "folders": [
+        "."
+    ],
+    "propertyTypes": [
+        {
+            "color": "#ff55ffff",
+            "id": 7,
+            "members": [
+                {
+                    "name": "lvlmax",
+                    "type": "int",
+                    "value": 0
+                },
+                {
+                    "name": "lvlmin",
+                    "type": "int",
+                    "value": 0
+                },
+                {
+                    "name": "pokemon",
+                    "type": "string",
+                    "value": ""
+                },
+                {
+                    "name": "weight",
+                    "type": "int",
+                    "value": 1
+                }
+            ],
+            "name": "Encounter",
+            "type": "class",
+            "useAs": [
+                "property",
+                "map",
+                "layer",
+                "object",
+                "tile",
+                "tileset",
+                "wangcolor",
+                "wangset"
+            ]
+        },
+        {
+            "id": 8,
+            "name": "Facing",
+            "storageType": "string",
+            "type": "enum",
+            "values": [
+                "up",
+                "right",
+                "down",
+                "left"
+            ],
+            "valuesAsFlags": false
+        },
+        {
+            "color": "#ffa0a0a4",
+            "id": 9,
+            "members": [
+                {
+                    "name": "name",
+                    "type": "string",
+                    "value": ""
+                }
+            ],
+            "name": "Map",
+            "type": "class",
+            "useAs": [
+                "property",
+                "map"
+            ]
+        },
+        {
+            "color": "#ff0000ff",
+            "id": 2,
+            "members": [
+                {
+                    "name": "collides",
+                    "type": "bool",
+                    "value": false
+                },
+                {
+                    "name": "facingdir",
+                    "propertyType": "Facing",
+                    "type": "string",
+                    "value": "down"
+                },
+                {
+                    "name": "walks",
+                    "type": "bool",
+                    "value": false
+                }
+            ],
+            "name": "Object",
+            "type": "class",
+            "useAs": [
+                "property",
+                "object"
+            ]
+        },
+        {
+            "color": "#ffaaff00",
+            "id": 1,
+            "members": [
+                {
+                    "name": "collides",
+                    "type": "bool",
+                    "value": false
+                },
+                {
+                    "name": "name",
+                    "type": "string",
+                    "value": ""
+                }
+            ],
+            "name": "Tile",
+            "type": "class",
+            "useAs": [
+                "property",
+                "map",
+                "layer",
+                "object",
+                "tile",
+                "tileset",
+                "wangcolor",
+                "wangset"
+            ]
+        },
+        {
+            "color": "#ff00aa00",
+            "id": 5,
+            "members": [
+            ],
+            "name": "Trigger",
+            "type": "class",
+            "useAs": [
+                "property",
+                "map",
+                "layer",
+                "object",
+                "tile",
+                "tileset",
+                "wangcolor",
+                "wangset"
+            ]
+        },
+        {
+            "color": "#ffaa00ff",
+            "id": 3,
+            "members": [
+                {
+                    "name": "dstmap",
+                    "type": "string",
+                    "value": ""
+                },
+                {
+                    "name": "dstpoint",
+                    "type": "string",
+                    "value": ""
+                }
+            ],
+            "name": "Warp",
+            "type": "class",
+            "useAs": [
+                "property",
+                "map",
+                "layer",
+                "object",
+                "tile",
+                "tileset",
+                "wangcolor",
+                "wangset"
+            ]
+        }
+    ]
+}

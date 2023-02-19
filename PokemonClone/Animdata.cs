@@ -1,63 +1,71 @@
 ﻿using Raylib_cs;
 using static Globals;
 
-public class TextureEx {
-    public Texture2D tex;
+public class Frame {
+    public int index;
     public bool xFlip;
     public bool yFlip;
 }
 
 public class Anim {
-    public List<TextureEx> textures;
+    public List<Frame> frames = new List<Frame>();
 }
 
-public class Anim2 {
-    public Action setup;
-    public Action update;
-    public Action end;
+class NPC {
+
+    public void Start() {
+        Timer timer = new Timer();
+        timer.ListenOnce(1f, () => {
+            //set pos in random dir
+            
+            //set sprites animation state
+        });
+
+    }
+
+    public void Update() {
+        //have sprite follow position
+
+
+    }
 }
 
 
-public static class animdata {
+public static class Animdata {
 
     public static Anim moveLeftAnim = new Anim() {
-        textures = new List<TextureEx> {
-            new TextureEx() { tex = playerSide2Tex },
-            new TextureEx() { tex = playerSideTex },
+        frames = new List<Frame> {
+            new Frame() { index = 5 },
+            new Frame() { index = 2 },
         },
     };
     public static Anim moveRightAnim = new Anim() {
-        textures = new List<TextureEx> {
-            new TextureEx() { tex = playerSide2Tex, xFlip = true },
-            new TextureEx() { tex = playerSideTex,xFlip = true },
+        frames = new List<Frame> {
+            new Frame() { index = 5, xFlip = true },
+            new Frame() { index = 2, xFlip = true },
         },
     };
-    public static Anim moveFrontAnim = new Anim() {
-        textures = new List<TextureEx> {
-            new TextureEx() { tex = playerFront2Tex },
-            new TextureEx() { tex = playerFrontTex },
-            //new TextureEx() { tex = playerFront2Tex,xFlip = true },
-            //new TextureEx() { tex = playerFrontTex },
+    public static Anim moveUpAnim = new Anim() {
+        frames = new List<Frame> {
+            new Frame() { index =  4},
+            new Frame() { index =  1},
         },
     };
     //new TextureEx() { tex = playerFrontTex },
-    public static Anim moveBackAnim = new Anim() {
-        textures = new List<TextureEx> {
-            new TextureEx() { tex = playerBack2Tex },
-            new TextureEx() { tex = playerBackTex },
-            //new TextureEx() { tex = playerBack2Tex,xFlip = true },
-            //new TextureEx() { tex = playerBackTex },
+    public static Anim moveDownAnim = new Anim() {
+        frames = new List<Frame> {
+            new Frame() { index = 3},
+            new Frame() { index = 0},
         },
     };
 
-    public static List<Anim> moveDirAnims = new List<Anim> { moveRightAnim, moveLeftAnim, moveFrontAnim, moveBackAnim };
-    
-    public static List<TextureEx> idleTexts = new List<TextureEx> {
-        new TextureEx() { tex = playerSideTex,xFlip = true } ,
-        new TextureEx() { tex = playerSideTex },
-        new TextureEx() { tex = playerFrontTex },
-        new TextureEx() { tex = playerBackTex },
-        new TextureEx() { tex = playerFrontTex },
+    public static List<Anim> moveDirAnims = new List<Anim> { moveRightAnim, moveLeftAnim, moveDownAnim, moveUpAnim};
+
+    public static List<Anim> idleAnim = new List<Anim> {
+        new Anim{ frames = new List<Frame> {new Frame() { index = 2, xFlip = true}}},
+        new Anim{ frames = new List<Frame> {new Frame() { index = 2}}},
+        new Anim{ frames = new List<Frame> {new Frame() { index = 0}}},
+        new Anim{ frames = new List<Frame> {new Frame() { index = 1}}},
     };
 
 }
